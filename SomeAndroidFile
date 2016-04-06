@@ -1,0 +1,182 @@
+package com.shimon_doodkin.imshowTest;
+
+ 
+import java.util.ArrayList; 
+import javax.microedition.khronos.opengles.GL10;
+
+import org.opencv.android.OpenCVLoader;
+import org.opencv.android.Utils; 
+import org.opencv.core.*;
+
+import org.opencv.highgui.Highgui;
+import org.opencv.imgproc.Imgproc;
+ 
+import android.annotation.SuppressLint;
+import android.app.ActionBar;
+import android.app.Activity;
+import android.app.Dialog;
+import android.content.DialogInterface;
+import android.content.DialogInterface.OnKeyListener;
+import android.content.pm.ActivityInfo;
+import android.graphics.Bitmap;
+import android.graphics.drawable.BitmapDrawable;
+import android.os.AsyncTask;
+import android.os.Build;
+import android.os.Bundle;
+import android.util.Log;
+import android.view.KeyEvent;
+import android.view.Menu;
+import android.view.MenuItem; 
+import android.view.SurfaceHolder;
+import android.view.View;
+import android.view.View.OnClickListener; 
+import android.widget.ImageView;
+import android.app.AlertDialog; 
+import com.shimon_doodkin.imshowTest.Algorithm;
+import com.shimon_doodkin.imshowTest.Algorithm.*;
+
+public class ImShowTestActivity extends Activity  {
+	
+	static {
+	    if (!OpenCVLoader.initDebug()) {
+	        // Handle initialization error
+	    }
+	}
+
+
+	ImShowMethod getAndroidImShow()
+	{
+		return new ImShowMethod() {
+		
+			@Override
+			public void imshow(final String name,final Mat rgba_mat)
+			{
+				Bitmap bmp = null;
+				try
+				{
+					bmp = Bitmap.createBitmap(rgba_mat.cols(), rgba_mat.rows(), Bitmap.Config.ARGB_8888);
+					imshow_bitmap(  name,  bmp);
+				}
+				catch (CvException e){Log.d("Exception",e.getMessage()); }
+				
+			}
+			
+			private void imshow_bitmap(final String name,Bitmap bitmap)
+			{
+
+		 		 if (bitmap.getHeight() > GL10.GL_MAX_TEXTURE_SIZE||bitmap.getWidth() > GL10.GL_MAX_TEXTURE_SIZE)
+				 {
+					    // this is the case when the bitmap fails to load
+						 if(((float)bitmap.getHeight())<((float)bitmap.getWidth()))
+						 {
+							 float aspect_ratio = ((float)bitmap.getHeight())/((float)bitmap.getWidth());
+							 Bitmap scaledBitmap = Bitmap.createScaledBitmap(bitmap,  
+						    		 		(int) (GL10.GL_MAX_TEXTURE_SIZE*0.9),
+						                    (int) (GL10.GL_MAX_TEXTURE_SIZE*0.9*aspect_ratio),false);
+							    
+						     bitmap=scaledBitmap;
+						    
+						 }
+						 else
+						 {
+							 float aspect_ratio = ((float)bitmap.getWidth())/((float)bitmap.getHeight());
+							 Bitmap scaledBitmap = Bitmap.createScaledBitmap(bitmap, 
+							                    (int) (GL10.GL_MAX_TEXTURE_SIZE*0.9*aspect_ratio),
+							                    (int) (GL10.GL_MAX_TEXTURE_SIZE*0.9),false);
+							    
+							 bitmap=scaledBitmap;
+						    
+						 }
+					}
+				 final Bitmap fbitmap=bitmap;
+				 
+			    /*
+			    Timer autoUpdate = new Timer();
+		       autoUpdate.schedule(new TimerTask() {
+		           @Override
+		           public void run() {
+		               runOnUiThread(new Runnable() {
+		                   public void run() {
+		                   	d.dismiss();
+		                   }
+		               });
+		           }
+		       }, 0, 10000);
+			    */
+				 
+				ImShowTestActivity.this.runOnUiThread(new Runnable() {
+					
+					@SuppressLint("NewApi") @Override
+					public void run() {
+				
+
+						 final ImageView imageView = new ImageView(ImShowTestActivity.this);
+						 imageView.setClickable(true);
+						 imageView.callOnClick();
+
+						 // for bitmaps with dimensions that lie within the limits, load the image normally
+						    if (Build.VERSION.SDK_INT >= 16) {
+						        BitmapDrawable ob = new BitmapDrawable(getResources(), fbitmap);
+						        imageView.setBackground(ob);
+						    } else {
+						        imageView.setImageBitmap(fbitmap);
+						    }
+						    
+
+
+						 final Dialog d = new AlertDialog.Builder(ImShowTestActivity.this)
+				        .setTitle(name)
+				        .setView(imageView)
+				        .create();
+				
+						 OnKeyListener kl=new OnKeyListener() {
+								
+								@Override
+								public boolean onKey(DialogInterface dialog, int keyCode, KeyEvent event) {
+									if(keyCode==27) {d.dismiss();return true;}
+									return false;
+								}
+							};
+				         d.setOnKeyListener(kl);
+				         
+						 OnClickListener ll=new OnClickListener() {
+								@Override
+								public void onClick(View v) {
+									d.dismiss();
+								}
+							 };		 
+							    imageView.setOnClickListener(ll);
+						
+				         d.show();
+				         
+					}
+				});
+			}
+		};
+	}
+	
+	@Override
+	protected void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		
+		...
+		
+		Algorithm.imshow=getAndroidImShow();
+    
+    
+    //Mat image = Highgui.imread("/sdcard/static1.jpg");   // Read the file
+		int w=500;Mat image= Mat.zeros( w, w, CvType.CV_8UC3 );
+		Core.ellipse( image, new Point( w/2.0, w/2.0 ), new Size( w/4.0, w/16.0 ),  0, 0, 360, new Scalar( 255, 0, 0 ), 2, 8,0 );
+		Core.circle( image,new Point( w/2.0, w/2.0),(int) (w/32.0),new Scalar( 0, 0, 255 ),-1,8,0 );
+	  
+	  
+	  imshow.imshow( "Display window", image ,Imgproc.COLOR_RGB2BGRA);     // Show our image inside it.
+		
+		
+		...
+		
+	}
+
+	...
+	
+}
