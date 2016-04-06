@@ -1,4 +1,4 @@
-package com.shimon_doodkin.imshow;
+package com.shimon_doodkin.imshowTest;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
